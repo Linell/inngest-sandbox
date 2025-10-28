@@ -41,10 +41,10 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
-	fmt.Println("port", port)
 	if port == "" {
 		port = "3939"
 	}
+	fmt.Println("Running on Port: ", port)
 
 	http.ListenAndServe(fmt.Sprintf(":%s", port), client.Serve())
 }
