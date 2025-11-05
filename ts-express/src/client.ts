@@ -1,5 +1,5 @@
-import { otelMiddleware } from "inngest/experimental";
-const otel = otelMiddleware();
+import { extendedTracesMiddleware } from "inngest/experimental";
+const otel = extendedTracesMiddleware();
 
 import { Inngest } from "inngest";
 

@@ -25,18 +25,39 @@ export const fetchGist = inngest.createFunction(
       return response
     })
 
-    return(rawData)
+    const recipePost = await step.run("http-post-recipe", async () => {
+      const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: `Recipe: some recipe`,
+          body: rawData,
+          userId: 1,
+        }),
+      }).then(resp => {
+        return resp.text()
+      })
+      return response
+    })
+
+    return({
+      recipePost,
+      rawData,
+    })
   }
 )
 
 export const recipeInference = inngest.createFunction(
   {
     id: "recipe-inference",
-    retries: 0,
+    retries: 2
   },
   { event: "demo/recipe-inference" },
   async ({ event, step }) => {
-    // Step 1: Get ingredient from event or pick a random one
+    await step.sleep("wait-a-second", 13)
+
     const ingredientName = event.data?.ingredient || (await step.ai.infer("pick-ingredient", {
       model: step.ai.models.openai({ model: "gpt-4o" }),
       body: {
@@ -47,7 +68,13 @@ export const recipeInference = inngest.createFunction(
       },
     })).choices[0].message.content;
 
-    // Step 2: Create a recipe using that ingredient
+    const theStatus = await step.run("foobar", async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const foo = await fetch("https://thelinell.com")
+      return foo.status
+    })
+
     const recipe = await step.ai.infer("create-recipe", {
       model: step.ai.models.openai({ model: "gpt-4o" }),
       body: {
@@ -58,7 +85,6 @@ export const recipeInference = inngest.createFunction(
       },
     });
 
-    // Step 3: Suggest a wine pairing for the recipe
     const winePairing = await step.ai.infer("suggest-wine", {
       model: step.ai.models.openai({ model: "gpt-4o" }),
       body: {
@@ -69,8 +95,12 @@ export const recipeInference = inngest.createFunction(
       },
     });
 
-    // Step 4: Review the recipe and wine pairing using direct OpenAI call
     const nonInngestInferenceStep = await step.run("review-recipe", async () => {
+      const foo = await fetch("https://www.inngest.com?otm=foo")
+      if (Math.random() < 0.2) {
+        throw new Error("Random failure occured")
+      }
+      const fooAgain = await fetch("https://www.inngest.com?otm=foo")
       const openai = getOpenAI();
       const persona = event.data.persona || "an eager foodie";
       const response = await openai.chat.completions.create({
