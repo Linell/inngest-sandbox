@@ -20,6 +20,15 @@ inngest_span_processor = InngestSpanProcessor()
 # The backend expects scope "inngest" for SDK-created spans
 USERLAND_SCOPE = "inngest"
 
+# Attribute keys expected by the Inngest backend for userland spans
+# These use the _inngest. prefix which is parsed by the backend's meta package
+ATTR_USERLAND = "_inngest.userland"  # Boolean - marks span as userland
+ATTR_USERLAND_NAME = "_inngest.userland.name"  # Span name for display
+ATTR_USERLAND_KIND = "_inngest.userland.kind"  # Span kind (INTERNAL, CLIENT, etc.)
+ATTR_USERLAND_SCOPE_NAME = "_inngest.userland.scope.name"  # Tracer scope name
+ATTR_USERLAND_SCOPE_VERSION = "_inngest.userland.scope.version"  # Tracer scope version
+ATTR_USERLAND_SERVICE_NAME = "_inngest.userland.service.name"  # Service name
+
 
 class InngestOTELMiddleware(inngest.MiddlewareSync):
     """
@@ -129,6 +138,13 @@ class InngestOTELMiddleware(inngest.MiddlewareSync):
             self._span.set_attribute("sys.app.id", app_id)
         if fn_id:
             self._span.set_attribute("sys.function.id", fn_id)
+
+        # Mark this span as userland - required for backend to recognize it
+        # The backend checks for _inngest.userland attribute to identify userland spans
+        self._span.set_attribute(ATTR_USERLAND, True)
+        self._span.set_attribute(ATTR_USERLAND_NAME, span_name)
+        self._span.set_attribute(ATTR_USERLAND_KIND, "INTERNAL")
+        self._span.set_attribute(ATTR_USERLAND_SCOPE_NAME, USERLAND_SCOPE)
 
         # Make span active so child spans are properly parented
         self._token = otel_context.attach(trace.set_span_in_context(self._span))

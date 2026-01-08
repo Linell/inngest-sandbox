@@ -4,6 +4,10 @@ Custom SpanProcessor that adds Inngest-required attributes to child spans.
 This processor tracks spans that are children of Inngest userland spans and adds
 the required attributes (inngest.traceref, inngest.traceparent, etc.) so they
 can be properly stored and displayed in Inngest's trace view.
+
+IMPORTANT: Child spans must also be marked as userland (_inngest.userland: true)
+for them to appear in the Inngest UI. The backend deliberately ignores the
+root inngest.execution span and only displays its children.
 """
 
 from opentelemetry.sdk.trace import SpanProcessor, ReadableSpan
@@ -11,6 +15,12 @@ from opentelemetry.trace import Span
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Userland attribute keys - must match otel_middleware.py
+ATTR_USERLAND = "_inngest.userland"
+ATTR_USERLAND_NAME = "_inngest.userland.name"
+ATTR_USERLAND_KIND = "_inngest.userland.kind"
+ATTR_USERLAND_SCOPE_NAME = "_inngest.userland.scope.name"
 
 
 class InngestSpanProcessor(SpanProcessor):
@@ -89,6 +99,17 @@ class InngestSpanProcessor(SpanProcessor):
                 for key, value in parent_attrs.items():
                     if value is not None:
                         span.set_attribute(key, value)
+
+                # Mark child spans as userland so they appear in the UI
+                # The backend ignores the root inngest.execution span and only shows children
+                span.set_attribute(ATTR_USERLAND, True)
+
+                # Set userland metadata for this child span
+                # Use the span's own name for display
+                span_name = getattr(span, 'name', None) or getattr(span, '_name', 'unknown')
+                span.set_attribute(ATTR_USERLAND_NAME, span_name)
+                span.set_attribute(ATTR_USERLAND_KIND, "INTERNAL")
+                span.set_attribute(ATTR_USERLAND_SCOPE_NAME, "inngest")
 
                 # Track this span so its children also get attributes
                 self._tracked_spans[span_id] = parent_attrs
