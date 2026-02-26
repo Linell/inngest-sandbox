@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "dotenv": "17.2.3",
-    "inngest": "3.52.3",
+    "inngest": "file:./../../inngest-js-two/packages/inngest/inngest.tgz",
     "next": "16.1.6",
     "openai": "^6.25.0",
     "react": "19.2.0",

@@ -74,8 +74,8 @@ importers:
         specifier: 17.2.3
         version: 17.2.3
       inngest:
-        specifier: 3.52.3
-        version: 3.52.3(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(express@5.1.0)(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.13)
+        specifier: file:./../../inngest-js-two/packages/inngest/inngest.tgz
+        version: file:../inngest-js-two/packages/inngest/inngest.tgz(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(express@5.1.0)(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.13)
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -2989,8 +2989,9 @@ packages:
       typescript:
         optional: true
 
-  inngest@3.52.3:
-    resolution: {integrity: sha512-e1sHdjjySXX56m58SMYz+1hRqBKPzxM6w5tPAEs30ocpsK2VZOqyc2aOJ4dQPixilJOphlk+IJx0SjX2gwGtPQ==}
+  inngest@file:../inngest-js-two/packages/inngest/inngest.tgz:
+    resolution: {integrity: sha512-5YOUyei5/rE+zxYh4gaVjWxkqvz8Ckmmpb1A1uTqYyLqOu2mm1yzTvlZ05xelvFCwLfyI6hDAbHe+YqeYQapEg==, tarball: file:../inngest-js-two/packages/inngest/inngest.tgz}
+    version: 3.52.0
     engines: {node: '>=20'}
     peerDependencies:
       '@sveltejs/kit': '>=1.27.3'
@@ -7183,7 +7184,7 @@ snapshots:
       - encoding
       - supports-color
 
-  inngest@3.52.3(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(express@5.1.0)(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.13):
+  inngest@file:../inngest-js-two/packages/inngest/inngest.tgz(@opentelemetry/core@2.5.0(@opentelemetry/api@1.9.0))(express@5.1.0)(next@16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.13):
     dependencies:
       '@bufbuild/protobuf': 2.11.0
       '@inngest/ai': 0.1.7
