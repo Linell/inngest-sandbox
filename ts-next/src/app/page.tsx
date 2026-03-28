@@ -1,103 +1,170 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import { useRealtime } from "inngest/react";
+import { myChannel } from "@/inngest/channels";
+import { getRealtimeToken, startRun, publishFromClient } from "./actions";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [runId, setRunId] = useState<string | null>(null);
+  const [extraMsg, setExtraMsg] = useState("");
+  const [lastBatchSize, setLastBatchSize] = useState(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const channel = useMemo(
+    () => (runId ? myChannel({ runId }) : undefined),
+    [runId]
+  );
+
+  const token = useMemo(
+    () => (runId ? () => getRealtimeToken(runId) : undefined),
+    [runId]
+  );
+
+  const {
+    connectionStatus,
+    runStatus,
+    isPaused,
+    pauseReason,
+    messages,
+    result,
+    error,
+    reset,
+  } = useRealtime({
+    channel,
+    topics: ["status", "result"] as const,
+    enabled: !!runId,
+    token,
+    bufferInterval: 500,
+    historyLimit: 10,
+  });
+
+  useEffect(() => {
+    if (messages.delta.length > 0) {
+      setLastBatchSize(messages.delta.length);
+    }
+  }, [messages.delta]);
+
+  async function handleStart() {
+    reset();
+    setLastBatchSize(0);
+    const { runId: id } = await startRun();
+    setRunId(id);
+  }
+
+  async function handleExtraPublish() {
+    if (!runId || !extraMsg) return;
+    await publishFromClient(runId, extraMsg);
+    setExtraMsg("");
+  }
+
+  return (
+    <div className="p-8 max-w-2xl mx-auto font-[family-name:var(--font-geist-mono)] space-y-6">
+      <h1 className="text-xl font-bold">Inngest Realtime Demo</h1>
+
+      <p className="text-sm text-foreground/60">
+        Click &quot;Start Run&quot; to trigger an Inngest function. It publishes
+        status updates in real time as each step completes. You should see
+        messages appear below over ~16 seconds.
+      </p>
+
+      <button
+        onClick={handleStart}
+        className="px-4 py-2 bg-foreground text-background rounded"
+      >
+        Start Run
+      </button>
+
+      {/* Connection & run status */}
+      <div className="text-sm space-y-1">
+        <p>
+          Connection: {connectionStatus}
+          {isPaused && pauseReason && (
+            <span className="text-yellow-500 ml-2">
+              (paused: {pauseReason})
+            </span>
+          )}
+        </p>
+        <p>Run: {runStatus}</p>
+        <p>Run ID: {runId ?? "none"}</p>
+        {error && <p className="text-red-500">Error: {error.message}</p>}
+      </div>
+
+      {/* Per-topic latest + cross-cutting fields */}
+      <div className="text-sm space-y-1">
+        <p>
+          Latest status:{" "}
+          {messages.byTopic.status?.data.message ?? "—"}
+        </p>
+        <p>
+          Latest result:{" "}
+          {messages.byTopic.result?.data.value ?? "—"}
+        </p>
+        <p>
+          Last message:{" "}
+          {messages.last
+            ? `${JSON.stringify(messages.last.kind !== "run" ? messages.last.data : null)} (${messages.last.kind !== "run" ? messages.last.topic : messages.last.kind})`
+            : "—"}
+        </p>
+        <p>
+          Function result:{" "}
+          <span
+            className={
+              result === undefined ? "text-foreground/40" : "text-green-500"
+            }
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            {result === undefined ? "—" : JSON.stringify(result)}
+          </span>
+        </p>
+        <p className="text-foreground/50">
+          Last batch: {lastBatchSize} message
+          {lastBatchSize !== 1 ? "s" : ""} (buffered at 500ms)
+        </p>
+      </div>
+
+      {/* Test inngest.realtime.publish() from outside a function */}
+      {runId && (
+        <div className="space-y-1">
+          <p className="text-xs text-foreground/50">
+            Publish to the channel from using
+            inngest.realtime.publish outside a function:
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={extraMsg}
+              onChange={(e) => setExtraMsg(e.target.value)}
+              placeholder="Type a message..."
+              className="px-2 py-1 border rounded bg-transparent flex-1 text-sm"
+              onKeyDown={(e) => e.key === "Enter" && handleExtraPublish()}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <button
+              onClick={handleExtraPublish}
+              className="px-3 py-1 border rounded text-sm"
+            >
+              Publish
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      {/* All messages log */}
+      <div className="text-xs space-y-1 max-h-80 overflow-y-auto">
+        <p className="font-bold">
+          All messages ({messages.all.length} of 10 max):
+        </p>
+        {messages.all.map((msg, i) => (
+          <pre key={i} className="text-foreground/70">
+            {JSON.stringify(
+              {
+                kind: msg.kind,
+                topic: msg.kind !== "run" ? msg.topic : undefined,
+                data: msg.kind !== "run" ? msg.data : undefined,
+              },
+              null,
+              2
+            )}
+          </pre>
+        ))}
+      </div>
     </div>
   );
 }
