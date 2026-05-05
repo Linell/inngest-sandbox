@@ -9,7 +9,7 @@
     "@inngest/middleware-encryption": "1.0.2",
     "dotenv": "17.2.3",
     "express": "5.1.0",
-    "inngest": "4.2.2"
+    "inngest": "file:../../inngest-js/packages/inngest/inngest.tgz"
   },
   "devDependencies": {
     "@types/express": "5.0.5",
