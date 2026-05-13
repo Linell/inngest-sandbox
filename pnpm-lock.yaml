@@ -3218,8 +3218,8 @@ packages:
         optional: true
 
   inngest@file:../inngest-js/packages/inngest/inngest.tgz:
-    resolution: {integrity: sha512-JZ3ZeDTUtBirWhdd14DJgOzoqvibT3+WfEzV+lFI7keECZyaN/GnUxxsef6zkiLi71CDY9y3atG2+tD63FlVqQ==, tarball: file:../inngest-js/packages/inngest/inngest.tgz}
-    version: 4.2.6
+    resolution: {integrity: sha512-navAZtXaj/LiGJwNHbXZYulMK0SK1mOOGJ3TrUuayCKseY5snMYUV8vbaLD0vLvmF/TRkkjaYlWt3tSyzbltgg==, tarball: file:../inngest-js/packages/inngest/inngest.tgz}
+    version: 4.3.0
     engines: {node: '>=20'}
     peerDependencies:
       '@sveltejs/kit': '>=1.27.3'
