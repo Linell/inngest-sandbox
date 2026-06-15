@@ -9,7 +9,7 @@
     "@inngest/middleware-encryption": "1.0.2",
     "dotenv": "17.2.3",
     "express": "5.1.0",
-    "inngest": "4.2.2"
+    "inngest": "4.4.1-pr-1521.15"
   },
   "devDependencies": {
     "@types/express": "5.0.5",
